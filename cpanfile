@@ -13,7 +13,6 @@ suggests 'Scope::Upper';
 suggests 'Type::Tiny::XS';
 suggests 'URL::Encode::XS';
 
-suggests 'Zabbix::Tiny';
 
 on 'develop' => sub {
     requires 'Data::Printer';

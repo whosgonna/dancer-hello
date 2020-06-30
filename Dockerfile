@@ -12,6 +12,9 @@ RUN cpm install --workers 16 --without-develop --without-configure --with-sugges
 ### Final phase: the runtime version - notice that we start from the base perl image.
 FROM whosgonna/perl-runtime:latest
 
+WORKDIR /home/perl
+USER perl
+
 ## Set any environmental variables here.
 ENV PLACK_ENV=production
 
