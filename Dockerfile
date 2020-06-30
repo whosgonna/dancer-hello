@@ -7,8 +7,6 @@ RUN cpm install --workers 16 --without-develop --without-configure --with-sugges
     && carton install --without 'develop,configure'
 
 
-
-
 ### Final phase: the runtime version - notice that we start from the base perl image.
 FROM whosgonna/perl-runtime:latest
 
@@ -28,7 +26,6 @@ COPY --from=build /home/perl/local/ /home/perl/local/
 COPY cpanfile* /home/perl/
 RUN cpm install --workers 16 --without-develop --without-configure --with-suggests \
     && carton install --without 'develop,configure'
-
 
 
 COPY ./Dancer2-Hello/ Dancer2-Hello
