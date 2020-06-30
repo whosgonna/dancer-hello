@@ -12,23 +12,43 @@ default simple Template engine cannot do this, so TemplateToolkit is used.  So,
 this document is as much about illustrating how to add additional modules when
 using Docker as anything else.
 
+The docker image can be built from the base of this repository with the 
+following command:
+
+```
+docker build -t dancer2-hello .
+```
+
+The resuting image could be run with:
+
+```
+docker run -p 5000:5000 dancer2-hello
+```
+
+
 ## The Dockerfile:
 
-The dockerfile is fairly straightforward.  We start by creating a build image
-from `whosgonna/dancer2-tt-gazelle:build`.  To this, we add the cpanfiles,
-and then install the modules.
+The dockerfile is mutistage build.  We start by creating a build image
+from `whosgonna/dancer2-tt-gazelle:build`. `whosgonna/dancer2-tt-gazelle:build`
+is about 363 MB insize and contains some common modules that are necessary for 
+building modules. To this image we copy the cpanfiles, and then install the 
+modules.
 
-Then we create a runtime template from the minimal `whosgonna/perl-runtime:latest`
-template.  We copy the libraries from the build image and the cpanfiles and 
-application files from the development computer.
 
-Next cpm and carton are run to make sure that the modules are installed and that the
-`cpanfile.snapshot` file is updated.
+A new image is then created from the minimal `whosgonna/perl-runtime:latest`
+template. `whosgonna/perl-runtime:latest` is 70 MB. We copy the libraries from 
+the build image and the cpanfiles and application files from the development 
+computer.  
 
-Finally, we launch the webapp using `carton`.  The use of `carton` forces Perl to 
-look in the `/home/perl/local/` directory.  Also note that although we're calling
-`plackup` to start the serivce, the `--server` attribute is set to run the 
-application under the Gazelle plack server.
+Next cpm and carton are run to make sure that the modules are installed and 
+that the `cpanfile.snapshot` file is updated.
+
+Finally, we launch the webapp using `carton`.  The use of `carton exec` forces
+the system to include the `local/lib/perl5` directory in your Perl library 
+search path. Also note that although we're calling `plackup` to start the 
+serivce, the `--server` attribute is set to run the application under the 
+Gazelle plack server.
+
 
 ```dockerfile
 ### Package deps, for build and devel phases
@@ -62,6 +82,27 @@ COPY ./Dancer2-Hello/ Dancer2-Hello
 
 CMD  carton exec plackup -p  5000 --server Gazelle /home/perl/Dancer2-Hello/bin/app.psgi
 ``` 
+
+
+# Further explainations
+
+## Why you start from the dancer2-tt-gazelle image, then later from the perl-runtime one?
+
+Because the perl-runtime image does not contain the necessary software packages
+to install the perl modules specified in the cpanfile. `dancer2-tt-gazelle` is
+363 MB in size.  While the `perl-runtime` image at 70MB does not contain the 
+software packages necessary to *install* the modules, it does contain the 
+packages  necessary to *use* the modules successfully.  Because `cpm`/`carton` 
+have installed the modules into `home/perl/local`, we can copy `home/perl/local`
+from the ephemeral `build` image into our final image based off of the 
+`perl-runtime` image.
+
+## Why are both `cpm install` AND `carton install` run?
+
+`cpm install` is used to do the actual installation of the modules.  
+`carton exec` is used to launch plackup later, but `carton exec` will fail if it
+does not find a proper `cpanfile.snapshot`, so `carton install` is run for the 
+exclusive purpose of creating the `cpanfile.snapshot` file.
 
 # See Also
 
